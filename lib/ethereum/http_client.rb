@@ -2,7 +2,7 @@ require 'net/http'
 require 'json'
 module Ethereum
   class HttpClient < Client
-    attr_accessor :host, :port, :uri, :ssl, :proxy
+    attr_accessor :host, :port, :uri, :ssl, :proxy, :before_request
 
     def initialize(host, proxy = nil, log = false)
       super(log)
@@ -11,7 +11,8 @@ module Ethereum
       @host = uri.host
       @port = uri.port
       @proxy = proxy
-      
+      @before_request = nil
+
       @ssl = uri.scheme == 'https'
       @uri = URI("#{uri.scheme}://#{@host}:#{@port}#{uri.path}")
     end
@@ -30,6 +31,7 @@ module Ethereum
       header = {'Content-Type' => 'application/json'}
       request = ::Net::HTTP::Post.new(uri, header)
       request.body = payload
+      @before_request.call(http, request) if @before_request
       response = http.request(request)
       response.body
     end
